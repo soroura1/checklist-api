@@ -5,7 +5,9 @@
   "type": "module",
   "license": "UNLICENSED",
   "private": true,
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
@@ -15,7 +17,7 @@
     "conformance": "CONFORMANCE_TARGET=http://localhost:8081 node ../contracts/conformance/src/run.js"
   },
   "dependencies": {
-    "@citadel/contracts": "git+file://../contracts#v0.1.0",
+    "@citadel/contracts": "file:../contracts",
     "fastify": "^5.0.0",
     "@fastify/rate-limit": "^10.0.0",
     "postgres": "^3.4.0"
