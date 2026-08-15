@@ -14,7 +14,7 @@
     "check": "./check-repo.sh",
     "migrate": "node src/migrate.js",
     "test": "node --test test/*.test.js",
-    "conformance": "CONFORMANCE_TARGET=http://localhost:8081 node ../contracts/conformance/src/run.js"
+    "conformance": "node ../contracts/conformance/src/run.js"
   },
   "dependencies": {
     "@citadel/contracts": "file:../contracts",
