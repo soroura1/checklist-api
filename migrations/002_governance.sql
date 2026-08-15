@@ -19,7 +19,7 @@
 --      Asserted independently in migrate.test.js, so a later migration that
 --      forgets FAILS rather than shipping an open table.
 --
--- Names checked against 001: catalogue_item, tool_run. No collision.
+-- Names checked against 001: catalogue_item, tenancy_probe. No collision.
 
 begin;
 

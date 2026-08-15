@@ -54,10 +54,9 @@ before(async () => {
   appSql = postgres({ ...base, username: 'checklist_app', password: process.env.TEST_APP_PASSWORD ?? 'apptest' });
 
   // Two facilities, one row each.
-  await ownerSql`delete from tool_run`;
-  await ownerSql`insert into tool_run (facility_id, seat_id, tool_id, tool_version)
-                 values (${FACILITY_A}, gen_random_uuid(), 'HZ-HVCA-001', '1.0.0'),
-                        (${FACILITY_B}, gen_random_uuid(), 'HZ-HVCA-001', '1.0.0')`;
+  await ownerSql`delete from tenancy_probe`;
+  await ownerSql`insert into tenancy_probe (facility_id)
+                 values (${FACILITY_A}), (${FACILITY_B})`;
 });
 
 after(async () => {
@@ -67,7 +66,7 @@ after(async () => {
 
 describe('tenant isolation', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — run against a real Postgres' }, () => {
   test('a facility sees only its own rows', async () => {
-    const rows = await withTenant(appSql, FACILITY_A, (tx) => tx`select facility_id from tool_run`);
+    const rows = await withTenant(appSql, FACILITY_A, (tx) => tx`select facility_id from tenancy_probe`);
     assert.equal(rows.length, 1, 'expected exactly one row');
     assert.equal(rows[0].facility_id, FACILITY_A);
   });
@@ -76,7 +75,7 @@ describe('tenant isolation', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — run 
     const rows = await withTenant(
       appSql,
       FACILITY_A,
-      (tx) => tx`select * from tool_run where facility_id = ${FACILITY_B}`,
+      (tx) => tx`select * from tenancy_probe where facility_id = ${FACILITY_B}`,
     );
     assert.equal(rows.length, 0, 'the policy must win over an explicit WHERE');
   });
@@ -84,7 +83,7 @@ describe('tenant isolation', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — run 
   test('a query with NO tenant context matches NOTHING, not everything', async () => {
     // current_setting(..., true) is NULL when never set; facility_id = NULL is NULL,
     // which is not TRUE. Forgetting to establish who is asking yields nothing.
-    const rows = await appSql`select * from tool_run`;
+    const rows = await appSql`select * from tenancy_probe`;
     assert.equal(rows.length, 0, 'an unset tenant must match nothing — this is the safe failure mode');
   });
 
@@ -94,8 +93,7 @@ describe('tenant isolation', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — run 
         withTenant(
           appSql,
           FACILITY_A,
-          (tx) => tx`insert into tool_run (facility_id, seat_id, tool_id, tool_version)
-                     values (${FACILITY_B}, gen_random_uuid(), 'X', '1.0.0')`,
+          (tx) => tx`insert into tenancy_probe (facility_id) values (${FACILITY_B})`,
         ),
       'the WITH CHECK clause must refuse a cross-tenant write',
     );
@@ -123,7 +121,7 @@ describe('tenant isolation', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — run 
   });
 
   test('the owner connection DOES see everything — proving the app handle is the meaningful one', async () => {
-    const rows = await ownerSql`select facility_id from tool_run`;
+    const rows = await ownerSql`select facility_id from tenancy_probe`;
     assert.equal(
       rows.length,
       2,
@@ -135,7 +133,7 @@ describe('tenant isolation', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — run 
   test('row-level security is FORCED, not merely enabled', async () => {
     const [t] = await ownerSql`
       select relrowsecurity, relforcerowsecurity
-        from pg_class where relname = 'tool_run'`;
+        from pg_class where relname = 'tenancy_probe'`;
     assert.equal(t.relrowsecurity, true, 'RLS must be enabled');
     assert.equal(
       t.relforcerowsecurity,

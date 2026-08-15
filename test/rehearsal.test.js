@@ -40,9 +40,9 @@ describe('migration rehearsal', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — n
     // 1. Build the before-state and populate it.
     for (const f of BEFORE) await sql.unsafe(readFileSync(join(dir, f), 'utf8'));
     const facility = '11111111-1111-1111-1111-111111111111';
-    await sql`insert into tool_run (facility_id, seat_id, tool_id, tool_version)
+    await sql`insert into tenancy_probe (facility_id, seat_id, tool_id, tool_version)
               values (${facility}, gen_random_uuid(), 'HZ-HVCA-001', '1.0.0')`;
-    const rowsBefore = await sql`select * from tool_run order by id`;
+    const rowsBefore = await sql`select * from tenancy_probe order by id`;
     const policiesBefore = await sql`
       select schemaname, tablename, policyname, qual, with_check
         from pg_policies order by tablename, policyname`;
@@ -53,7 +53,7 @@ describe('migration rehearsal', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — n
     }
 
     // 3. Nothing moved.
-    const rowsAfter = await sql`select * from tool_run order by id`;
+    const rowsAfter = await sql`select * from tenancy_probe order by id`;
     assert.deepEqual(rowsAfter, rowsBefore, 'a migration moved an existing row');
 
     // 4. No pre-existing policy changed — byte for byte.

@@ -11,7 +11,7 @@
  */
 
 import {
-  canTransition, canEdit, canApprove, canExecute, canPublish, adaptedAuthorityClass,
+  canTransition, canEdit, canApprove, canExecute, canPublish,
 } from '@citadel/contracts/rules';
 
 export class RefusalError extends Error {
@@ -134,34 +134,32 @@ export async function withdraw(sql, { toolId, version, actorId, reason }) {
 }
 
 /**
- * Create a local adaptation.
+ * Local adaptation — NOT IN R1.
  *
- * The adapted authority class is DERIVED, never supplied by the caller — a caller who could name it
- * could name `A`, and a facility that edits official guidance and keeps that label has created
- * content claiming an authority it no longer has. The database constraint refuses it too.
+ * ============================================================================
+ * REMOVED DELIBERATELY. A local adaptation is FACILITY-SCOPED — it needs a seat,
+ * and identity arrives at R2.
+ * ============================================================================
+ *
+ * An earlier draft implemented `adaptLocally()` here, taking a `facilityId` that
+ * CANNOT EXIST in R1. It was unreachable code: nothing could ever call it.
+ *
+ * The R1 plan says so plainly — "runs, local adaptation records and sync → R2,
+ * they need a facility seat" — and a task list said otherwise. The plan was
+ * right; the code followed the task list.
+ *
+ * What DOES stay in R1, deliberately:
+ *   · the `parent_*` columns on catalogue_tool — nullable, no name-collision
+ *     trap, and they document where the rule will be enforced
+ *   · `adaptation_may_not_claim_parent_authority` — the constraint is correct
+ *     now and will be load-bearing the moment adaptation exists
+ *   · `adaptedAuthorityClass()` in the shared rules, with its tests
+ *
+ * Columns and constraints are cheap to add early and safe to leave. CODE for an
+ * unbuilt feature is not — it looks callable.
+ *
+ * Restore at R2, alongside runs and facility history.
  */
-export async function adaptLocally(sql, { toolId, version, facilityId, actorId, changeSummary }) {
-  const parent = await loadTool(sql, toolId, version);
-  if (!parent) throw new RefusalError('unknown-lifecycle-state');
-
-  const localVersion = `${version}-facility.${Date.now()}`;
-  const derivedClass = adaptedAuthorityClass(parent.authorityClass);
-
-  await sql`
-    insert into catalogue_tool (
-      tool_id, version, title_key, purpose_key, authority_class, classification,
-      risk_tier, lifecycle_state, provenance, applicability,
-      parent_tool_id, parent_version, parent_authority_class,
-      adapted_by, adapted_at, change_summary, facility_id, created_by)
-    select tool_id, ${localVersion}, title_key, purpose_key,
-           ${derivedClass}, classification, risk_tier, 'draft',
-           provenance, applicability,
-           tool_id, ${version}, ${parent.authorityClass},
-           ${actorId}, now(), ${changeSummary ?? null}, ${facilityId}, ${actorId}
-      from catalogue_tool where tool_id = ${toolId} and version = ${version}`;
-
-  return { ok: true, version: localVersion, authorityClass: derivedClass };
-}
 
 /**
  * Read a tool for a CONSUMER.

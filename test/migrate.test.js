@@ -61,7 +61,7 @@ describe('migrations', () => {
     // The list of tenant tables is declared, not inferred, so ADDING a tenant table
     // is a deliberate act that shows up in review.
     // Declared, not inferred — ADDING a tenant table is a deliberate act that shows up in review.
-    const TENANT_TABLES = ['tool_run'];
+    const TENANT_TABLES = ['tenancy_probe'];
     // catalogue_tool is MIXED: global rows carry no facility, local adaptations do.
     // It is checked separately below rather than forced into this list.
     const sql = files.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');

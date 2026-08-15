@@ -89,22 +89,36 @@ comment on column catalogue_item.classification is
   'unclassified is a real member, not an absence. An unclassified tool CANNOT be executed. Defaulting a classification is not a fix — it is a judgement about what the tool is for.';
 
 -- ---------------------------------------------------------------------------
--- Facility-scoped tables. R0 has one, to prove the isolation mechanism end to
--- end while there is nothing to lose.
+-- A TENANCY PROBE — not a product table.
+--
+-- Proving row-level security end to end needs SOME tenant-scoped table, and R0
+-- has no product feature that is facility-scoped (facilities, seats and runs all
+-- arrive at R2). So this table exists for exactly one purpose: to let the
+-- isolation tests assert against something real while the cost of getting
+-- tenancy wrong is nothing.
+--
+-- ⚠️ IT IS DELIBERATELY NOT NAMED `tool_run`.
+--
+-- An earlier draft called it that — a table for a feature two releases away. But
+-- THIS MIGRATION BECOMES IMMUTABLE THE MOMENT IT DEPLOYS, and when R2 builds
+-- runs properly, `create table if not exists tool_run` would have SILENTLY
+-- SUCCEEDED and handed back this one. That is precisely the trap documented in
+-- 002's header, and it cost the prior attempt seven renamed tables.
+--
+-- Schema for an unbuilt feature quietly claims a name the future needs. This
+-- name is one R2 will never want.
 -- ---------------------------------------------------------------------------
-create table if not exists tool_run (
+create table if not exists tenancy_probe (
   id            uuid primary key default gen_random_uuid(),
   facility_id   uuid not null,                 -- THE TENANT KEY. Every tenant table carries it.
-  seat_id       uuid not null,
-  tool_id       text not null,
-  tool_version  text not null,                 -- PINNED. Never latest-approved for a recorded run.
-  started_at    timestamptz not null default now(),
-  completed_at  timestamptz,
-  findings      jsonb not null default '[]'::jsonb
+  note          text not null default 'isolation fixture',
+  created_at    timestamptz not null default now()
 );
 
-comment on column tool_run.facility_id is
-  'The tenant key. migrate.test.js asserts every tenant table and key carries one, so a later migration that forgets FAILS rather than shipping an open table.';
+comment on table tenancy_probe is
+  'A fixture proving row-level security works, not a product table. R2 creates its own facility-scoped tables with whatever shape those features actually need.';
+comment on column tenancy_probe.facility_id is
+  'The tenant key. migrate.test.js asserts every tenant table carries one, so a later migration that forgets FAILS rather than shipping an open table.';
 
 -- ---------------------------------------------------------------------------
 -- Isolation, applied as a LOOP over the tenant tables — not hand-written per
@@ -117,7 +131,7 @@ comment on column tool_run.facility_id is
 do $$
 declare
   t text;
-  tenant_tables text[] := array['tool_run'];
+  tenant_tables text[] := array['tenancy_probe'];
 begin
   foreach t in array tenant_tables loop
     execute format('alter table %I enable row level security', t);
