@@ -1,0 +1,23 @@
+{
+  "name": "@citadel/checklist-api",
+  "version": "0.1.0",
+  "description": "The governed content spine. The only executable content source.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js",
+    "check": "./check-repo.sh",
+    "migrate": "node src/migrate.js",
+    "test": "node --test test/*.test.js",
+    "conformance": "CONFORMANCE_TARGET=http://localhost:8081 node ../contracts/conformance/src/run.js"
+  },
+  "dependencies": {
+    "@citadel/contracts": "git+file://../contracts#v0.1.0",
+    "fastify": "^5.0.0",
+    "@fastify/rate-limit": "^10.0.0",
+    "postgres": "^3.4.0"
+  }
+}
