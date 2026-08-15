@@ -24,8 +24,14 @@
 
 import { test, before, after, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import postgres from 'postgres';
-import { withTenant } from '../src/db.js';
+
+// The driver and the db module are imported DYNAMICALLY, inside before().
+//
+// A top-level import means this file cannot even LOAD when dependencies are absent —
+// and node:test reports that as a FAILURE, which reads as "isolation is broken" when
+// the truth is "there is no database here". A test that cannot run must skip HONESTLY;
+// a misleading red is worse than an accurate skip.
+let postgres, withTenant;
 
 const HAVE_DB = !!process.env.TEST_DB_HOST;
 const FACILITY_A = '11111111-1111-1111-1111-111111111111';
@@ -36,6 +42,8 @@ let ownerSql; // the privileged account — migrations only
 
 before(async () => {
   if (!HAVE_DB) return;
+  ({ default: postgres } = await import('postgres'));
+  ({ withTenant } = await import('../src/db.js'));
   const base = {
     host: process.env.TEST_DB_HOST,
     port: Number(process.env.TEST_DB_PORT ?? 5432),
