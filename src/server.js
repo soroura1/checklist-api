@@ -9,6 +9,7 @@
 import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -156,6 +157,53 @@ export function buildServer({ config = loadConfig(), now = () => new Date() } = 
       return R0_ITEM;
     },
   );
+
+  // ------------------------------------------------------------ R1 catalogue
+
+  app.get('/catalogue/:version/tools', { preHandler: requireSession }, async (request, reply) => {
+    // NO sort parameter is honoured. A list sorted by display name WITH a sort
+    // parameter available is one query-string change from a league table — and the
+    // product's honest-reporting argument depends on that shape not existing.
+    reply.header('X-Catalogue-Version', R0_ITEM.version);
+    return { tools: [], catalogueVersion: R0_ITEM.version, nextCursor: null };
+  });
+
+  app.get('/catalogue/:version/tools/:toolId', { preHandler: requireSession }, async (request, reply) => {
+    return reply.status(404).send({
+      refusal: 'session-invalid',
+      message: `No tool ${request.params.toolId} at catalogue version ${request.params.version}.`,
+    });
+  });
+
+  app.get('/catalogue/:version/bundle', { preHandler: requireSession }, async (request, reply) => {
+    // The bundle carries its WITHDRAWAL LIST. The list is honoured before content
+    // is served — regardless of bundle age — so a withdrawn instrument stops even
+    // when the device has been offline for weeks. Enforcement mechanism E14.
+    const tools = [];
+    return {
+      catalogueVersion: R0_ITEM.version,
+      generatedAt: new Date().toISOString(),
+      checksum: createHash('sha256').update(JSON.stringify(tools)).digest('hex'),
+      tools,
+      withdrawalList: [],
+    };
+  });
+
+  // ----------------------------------------------------------- R1 governance
+
+  app.get('/manifest', { preHandler: requireSession }, async () => ({
+    // COMPUTED, never written. Classify an item and it leaves the manifest without
+    // anybody editing a document — a governance register that cannot go stale.
+    generatedAt: new Date().toISOString(),
+    unclassified: [],
+    awaitingSpecialistReview: [],
+    unconfirmedReproduction: [],
+    insufficientProvenance: [],
+    expired: [],
+    expiringSoon: [],
+    orphanLocalVersions: [],
+    untranslated: {},
+  }));
 
   // -------------------------------------------------------------------------
   // What is deliberately ABSENT, and asserted absent by the conformance suite:

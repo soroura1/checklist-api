@@ -60,7 +60,10 @@ describe('migrations', () => {
   test('every tenant table carries the tenant key', () => {
     // The list of tenant tables is declared, not inferred, so ADDING a tenant table
     // is a deliberate act that shows up in review.
+    // Declared, not inferred — ADDING a tenant table is a deliberate act that shows up in review.
     const TENANT_TABLES = ['tool_run'];
+    // catalogue_tool is MIXED: global rows carry no facility, local adaptations do.
+    // It is checked separately below rather than forced into this list.
     const sql = files.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');
 
     for (const table of TENANT_TABLES) {
@@ -105,6 +108,36 @@ describe('migrations', () => {
     const sql = files.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');
     assert.doesNotMatch(sql, /grant\s+all\b[^;]*checklist_app/i, 'grant exactly the data verbs, never ALL');
     assert.doesNotMatch(sql, /grant[^;]*schema_migrations[^;]*checklist_app/i);
+  });
+
+  test('catalogue_tool carries a nullable facility — global content is NOT tenant data', () => {
+    const sql = files.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');
+    assert.match(sql, /facility_id\s+uuid,/i,
+      'catalogue_tool is mixed: global rows have facility_id NULL, local adaptations carry one. ' +
+      'Adding a tenant column to genuinely shared content invites a filter that silently hides it.');
+    assert.match(sql, /local_versions_are_facility_scoped/i,
+      'a local adaptation must be facility-scoped and global content must not be — enforced by constraint');
+  });
+
+  test('★ immutability of a published version is enforced by the DATABASE, not only in code', () => {
+    const sql = files.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');
+    assert.match(sql, /create trigger published_versions_are_immutable/i,
+      'A rule enforced only in application code is one forgotten call away from not being enforced.');
+    assert.match(sql, /published-version-is-immutable/,
+      'the trigger must raise the NAMED refusal, so a test can assert WHICH rule fired');
+  });
+
+  test('★ a local adaptation cannot claim its parent authority class', () => {
+    const sql = files.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');
+    assert.match(sql, /adaptation_may_not_claim_parent_authority/i,
+      'Adapting class A or B produces class C. A label cannot outrank the content it describes.');
+  });
+
+  test('platform operators carry NO facility — the editorial workflow predates identity', () => {
+    const sql = files.map((f) => readFileSync(join(migrationsDir, f), 'utf8')).join('\n');
+    assert.match(sql, /create table if not exists platform_operator/i);
+    assert.doesNotMatch(sql, /platform_operator[\s\S]{0,400}facility_id\s+uuid\s+not null/i,
+      'an operator with a facility is a facility member, and belongs to identity-enrolment');
   });
 
   test('table names do not collide — `create table if not exists` succeeds silently on a taken name', () => {
