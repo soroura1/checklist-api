@@ -17,15 +17,21 @@ else
 fi
 
 # --- G2: the contracts dependency must pin an exact tag, never a branch. ---
+# The dependency is "@citadel/contracts". An earlier version of this check looked
+# for "contracts" and reported a FALSE PASS on every consumer — a check that passes
+# when it should not is worse than no check at all.
 if [ -f package.json ]; then
-  if grep -q '"contracts"' package.json; then
-    if grep -E '"contracts":\s*".*#v[0-9]+\.[0-9]+\.[0-9]+"' package.json >/dev/null; then
-      ok "contracts dependency pins an exact tag"
+  self=$(node -p "require('./package.json').name" 2>/dev/null || echo "")
+  if [ "$self" = "@citadel/contracts" ]; then
+    ok "this is contracts itself — no self-dependency expected"
+  elif node -p "!!(require('./package.json').dependencies||{})['@citadel/contracts']" 2>/dev/null | grep -q true; then
+    if grep -E '"@citadel/contracts":\s*"[^"]*#v[0-9]+\.[0-9]+\.[0-9]+"' package.json >/dev/null; then
+      ok "@citadel/contracts pins an exact tag"
     else
-      bad "contracts dependency must pin an exact tag (…#v1.2.3), never a branch"
+      bad "@citadel/contracts must pin an exact tag (…#v1.2.3), NEVER a branch — a branch dependency changes the contract without any consumer committing anything"
     fi
   else
-    ok "no contracts dependency (expected for contracts itself)"
+    bad "no @citadel/contracts dependency found — every consumer must pin the contract"
   fi
 fi
 

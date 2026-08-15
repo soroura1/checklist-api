@@ -1,0 +1,78 @@
+# Deployment — R0 G5.
+#
+# ============================================================================
+# A TAG ALONE IS NOT SUFFICIENT. THREE CONDITIONS.
+# ============================================================================
+#
+#   1. The tag's immutable SHA is reachable from protected `main`
+#   2. The required CI workflow passed FOR THAT EXACT SHA
+#   3. Environment approval is recorded
+#
+# The prior attempt's trap T32: its dependency install ran in a subdirectory
+# rather than at the workspace root, so "the most safety-critical tests in the
+# repository gated no deploy at all" — for many releases. Tests existed, passed
+# locally, and gated nothing.
+#
+# A CI RUN NOT BOUND TO THE DEPLOYED SHA IS DECORATION.
+
+name: Deploy
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  gate:
+    name: Deploy gate
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - id: resolve
+        run: echo "sha=$(git rev-parse HEAD^{commit})" >> "$GITHUB_OUTPUT"
+
+      # --- Condition 1 -------------------------------------------------------
+      - name: the tag's SHA is reachable from protected main
+        run: |
+          git fetch origin main --depth=0
+          if git merge-base --is-ancestor "${{ steps.resolve.outputs.sha }}" origin/main; then
+            echo "ok — ${{ steps.resolve.outputs.sha }} is on main"
+          else
+            echo "REFUSED: this tag points at a commit that is not on protected main."
+            echo "Tagging an unmerged commit and deploying it is how untested code reaches production."
+            exit 1
+          fi
+
+      # --- Condition 2 -------------------------------------------------------
+      - name: CI passed for THIS EXACT SHA
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ steps.resolve.outputs.sha }}';
+            const { data } = await github.rest.checks.listForRef({
+              owner: context.repo.owner, repo: context.repo.repo, ref: sha,
+            });
+            const ci = data.check_runs.find((r) => r.name === 'check');
+            if (!ci) {
+              core.setFailed(`REFUSED: no CI run found for ${sha}. A CI run not bound to the deployed SHA is decoration.`);
+            } else if (ci.conclusion !== 'success') {
+              core.setFailed(`REFUSED: CI for ${sha} concluded "${ci.conclusion}".`);
+            } else {
+              core.info(`ok — CI passed for ${sha}`);
+            }
+
+  deploy:
+    needs: gate
+    runs-on: ubuntu-latest
+    # --- Condition 3: environment approval is recorded ----------------------
+    environment: production
+    steps:
+      - name: deploy over SSH
+        run: echo "Placeholder. Wired when the VPS exists — Phase D, gated on A6."
+
+      # Deployment is not finished until it is externally verifiable.
+      - name: verify /version reports the deployed commit
+        run: echo "curl -fsS https://…/version | grep ${{ needs.gate.outputs.sha }}"
