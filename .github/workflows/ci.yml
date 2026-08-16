@@ -56,14 +56,20 @@ jobs:
       - name: contracts pin is an exact tag, never a branch
         run: ./check-repo.sh
 
-      # The contracts dependency is a PRIVATE git repo, and the runner's GITHUB_TOKEN is
-      # scoped to the repo the workflow runs in — it cannot clone a sibling. CONTRACTS_READ_TOKEN
-      # is an org-level secret: a fine-grained PAT with read-only Contents on contracts alone.
-      # npm normalises the github https pin to ssh in the lockfile, so both forms are rewritten.
-      - name: authenticate npm's git to the private contracts repo
+      # npm normalises the github https pin to git+ssh in the lockfile, and the runner has no
+      # SSH key — so ssh URLs are always rewritten to https. The repos are public and anonymous
+      # https clones work; if they ever go private again, set CONTRACTS_READ_TOKEN (org secret:
+      # fine-grained PAT, read-only Contents on contracts) and the rewrite carries it.
+      - name: route npm's git fetches over https (with token if one exists)
+        env:
+          TOKEN: ${{ secrets.CONTRACTS_READ_TOKEN }}
         run: |
-          git config --global url."https://x-access-token:${{ secrets.CONTRACTS_READ_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
-          git config --global --add url."https://x-access-token:${{ secrets.CONTRACTS_READ_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          if [ -n "$TOKEN" ]; then
+            git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "ssh://git@github.com/"
+            git config --global --add url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"
+          else
+            git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          fi
 
       - run: npm ci
 
