@@ -8,6 +8,7 @@
 
 import Fastify from 'fastify';
 import rateLimit from '@fastify/rate-limit';
+import cookie from '@fastify/cookie';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -99,6 +100,26 @@ export function buildServer({ config = loadConfig(), now = () => new Date() } = 
   //
   // Retrofitting security is how it does not happen.
   // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Cookie parsing.
+  //
+  // ⚠️ WITHOUT THIS, `request.cookies` IS ALWAYS UNDEFINED and the cookie branch
+  // of requireSession below is DEAD CODE.
+  //
+  // It was dead for the whole of R0, and every automated check still passed:
+  //   · the API tests authenticate with the Authorization header
+  //   · conformance does the same
+  //   · H3's 401/404 probe passed, because a missing credential SHOULD be 401
+  //
+  // Nothing in the suite took the path a browser takes. citadel's gateway sends
+  // `credentials: 'include'` — a cookie and no header — so the walk that R0
+  // exists to prove dead-ended on a 401, in the browser only.
+  //
+  // A route that answers 200 to curl and 401 to a browser is not a deployed
+  // route. This is why H5 is performed by a human.
+  // -------------------------------------------------------------------------
+  app.register(cookie);
+
   app.register(rateLimit, {
     max: config.rateLimitMax,
     timeWindow: config.rateLimitWindow,
