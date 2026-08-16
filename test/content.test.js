@@ -53,9 +53,32 @@ test('permission is confirmed, with evidence, on every item', () => {
   }
 });
 
-test('★ authorityClass is A throughout — the prior tool was "mixed", and that was the problem', () => {
-  assert.equal(tool.authorityClass, 'A');
-  for (const i of tool.items) assert.equal(i.authorityClass, 'A');
+test('★ authorityClass is C — these are ADAPTATIONS, and PAHO says so itself', () => {
+  // PAHO rights page: "If this work is adapted ... not endorsed by PAHO."
+  // adaptedAuthorityClass() returns C for a class A parent. The DB constraint
+  // that enforces it cannot fire on ingested content -- `parent` requires a
+  // toolId, and there is no field for an external source document. So this
+  // test is currently the only thing holding the rule. See the YAML comment.
+  assert.equal(tool.authorityClass, 'C');
+  for (const i of tool.items) assert.equal(i.authorityClass, 'C');
+});
+
+test('★ specialist review is required — "directs a facility to assess" is not a safety exemption', () => {
+  assert.equal(tool.specialistReviewRequired, true);
+  assert.equal(tool.specialistReviewSignedBy, null, 'nobody has signed it, and nobody may pretend to');
+});
+
+test('no evidence rule permits the outcome the source forbids', () => {
+  // i06 once read "...or explicitly declined", which let the item PASS when a
+  // finding had not been incorporated -- the opposite of the step it derives
+  // from. A rule that can be satisfied by not doing the thing is not a rule.
+  const i06 = tool.items.find((i) => i.id === 'HZ-HVCA-001-i06');
+  assert.ok(!/declined/i.test(i06.evidenceRule.fallback));
+});
+
+test('i01 carries likelihood — the source bullet requires it', () => {
+  const i01 = tool.items.find((i) => i.id === 'HZ-HVCA-001-i01');
+  assert.match(i01.evidenceRule.fallback, /likelihood/i);
 });
 
 test('nothing is unclassified', () => {

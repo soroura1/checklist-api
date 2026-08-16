@@ -29,22 +29,62 @@ purpose:
     susceptible to them, and the capacities it can rely on — so that preparedness is
     decided from evidence rather than from assumption.
 
-# Class A: issued by an international health body, reproduced under its own
-# licence. The prior tool was `mixed`, because it combined this material with
-# locally-authored items. Deriving from source separates them -- see the
-# reconciliation log, finding R-03.
-authorityClass: A
+# ============================================================================
+# CLASS C, NOT A -- AND THE RULE THAT SHOULD HAVE CAUGHT THIS DID NOT
+# ============================================================================
+# PAHO's own rights page, p.4: "If this work is adapted ... Views and opinions
+# expressed in the adaptation are the sole responsibility of the author(s) of
+# the adaptation and are NOT ENDORSED BY PAHO."
+#
+# These items ARE adaptations -- they add evidence formats, prerequisites,
+# roles and schedules PAHO does not state. Class A would attach PAHO's
+# authority to locally authored requirements.
+#
+# `adaptedAuthorityClass()` returns C for a class A parent, and migration 002
+# carries `adaptation_may_not_claim_parent_authority`. Neither fired, because
+# an earlier draft DECLARED NO PARENT -- and the constraint reads
+# "parent_tool_id is null or ...", so content that never admits it is derived
+# is exempt from the rule about derived content.
+#
+# The parent block below is what gives the constraint something to bite on.
+authorityClass: C
 classification: checklist
 dominantResponseType: structured-finding
 riskTier: general
 
-# Not a clinical or engineering instrument: it directs a facility to assess,
-# and does not itself prescribe a scoring formula or a safety judgement.
-specialistReviewRequired: false
+# ⚠️ RAISED BY THE D6b PRE-CHECK. An earlier draft said false, reasoning that
+# the tool "directs a facility to assess" -- and "directs a facility to assess"
+# is not a safety exemption. p.36: "Conducting a risk assessment of hospitals
+# requires coordination and engagement with SUBJECT MATTER EXPERTS in areas
+# such as engineering, architecture, safety, and disaster management."
+#
+# Erring toward more review is never the unsafe direction.
+#
+# riskTier is deliberately NOT raised here: it governs offline execution of
+# stale content, which is a safety-state judgement, and DEC-021 assigns
+# classification authority to the owner. Flagged for D7, not decided.
+specialistReviewRequired: true
 specialistReviewSignedBy: null
 
 lifecycleState: draft
 withdrawnAt: null
+
+# ⚠️ THE ADAPTATION RULE CANNOT BE DECLARED HERE. SCHEMA GAP, RECORDED.
+#
+# `parent` requires toolId + version -- it models a facility adapting ANOTHER
+# CATALOGUE TOOL, which is an R2 feature. There is no field for the case that
+# actually applies to every ingested batch: adapted from an EXTERNAL SOURCE
+# DOCUMENT of a known authority class.
+#
+# So `adaptation_may_not_claim_parent_authority` is not merely unfired here --
+# it is UNFIREABLE for ingested content, because the fact it keys on has
+# nowhere to live. The class C below is therefore held by this comment and by
+# test/content.test.js, which is weaker than a constraint and is why the gap is
+# recorded rather than worked around.
+#
+# Owed in `contracts`: an `adaptedFrom` block carrying sourceDocument,
+# issuingBody and sourceAuthorityClass, and the rule extended to read it.
+parent: null
 
 provenance: &paho
   sourceDocument: >-
@@ -52,6 +92,9 @@ provenance: &paho
     health emergencies and disasters in health facilities
   sourceLocation: "§1.1 Strategic Risk Assessment and Planning, pp. 36–38"
   issuingBody: Pan American Health Organization
+  # ⚠️ The source states a YEAR: "Washington, D.C., 2024". The day is a schema
+  # convention (the format requires a full date), NOT source data. Recorded here
+  # so it is never mistaken for a fact read off the document.
   publicationDate: "2024-01-01"
   reviewStatus: unreviewed
   reproductionPermission: confirmed
@@ -88,7 +131,7 @@ items:
       key: item.hz_hvca_001_i01.purpose
       fallback: >-
         Establish which hazards are credible here, before deciding what to prepare for.
-    authorityClass: A
+    authorityClass: C
     classification: checklist
     lifecycleState: draft
     provenance:
@@ -97,8 +140,10 @@ items:
     evidenceRule:
       key: item.hz_hvca_001_i01.evidence
       fallback: >-
-        A written hazard list naming natural, biological, technological and societal
-        hazards, each marked as affecting the hospital, the community, or both.
+        The assessment identifies relevant natural, biological, technological and
+        societal hazards; assesses the likelihood of each affecting the hospital, the
+        surrounding community, or both; and identifies which risks are prioritised for
+        management. No particular list or marking format is required.
     capabilityBlockRef: cb-hazard-identification-001
     requiredRoles: [emergency-preparedness-lead]
     prerequisites: []
@@ -115,7 +160,7 @@ items:
       key: item.hz_hvca_001_i02.purpose
       fallback: >-
         A hazard becomes a risk through a weakness. Name the weaknesses.
-    authorityClass: A
+    authorityClass: C
     classification: checklist
     lifecycleState: draft
     provenance:
@@ -141,8 +186,9 @@ items:
     purpose:
       key: item.hz_hvca_001_i03.purpose
       fallback: >-
-        Consequence, not likelihood alone, is what makes a hazard worth preparing for.
-    authorityClass: A
+        Assess potential consequences alongside likelihood, vulnerability and coping
+        capacity, so that risks can be prioritised on more than one dimension.
+    authorityClass: C
     classification: checklist
     lifecycleState: draft
     provenance:
@@ -169,7 +215,7 @@ items:
       key: item.hz_hvca_001_i04.purpose
       fallback: >-
         Capacity assumed is not capacity available. Record what is real.
-    authorityClass: A
+    authorityClass: C
     classification: checklist
     lifecycleState: draft
     provenance:
@@ -198,7 +244,7 @@ items:
       fallback: >-
         The source is explicit that hazards, vulnerabilities and capacities are dynamic.
         An assessment done once is a document, not a practice.
-    authorityClass: A
+    authorityClass: C
     classification: checklist
     lifecycleState: draft
     provenance:
@@ -207,8 +253,11 @@ items:
     evidenceRule:
       key: item.hz_hvca_001_i05.evidence
       fallback: >-
-        A named owner and a scheduled review date exist for the assessment. The source
-        prescribes no mandatory frequency, so the facility's own schedule is what counts.
+        The hospital can demonstrate ongoing monitoring of changes in hazards,
+        vulnerabilities and capacities, and has a locally determined schedule or defined
+        change triggers for repeating and documenting the assessment. The process is
+        documented sufficiently to be repeated. No universal fixed interval is imposed —
+        but a schedule that is not regular does not satisfy "continuously monitor".
     capabilityBlockRef: cb-assessment-review-cycle-001
     requiredRoles: [emergency-preparedness-lead]
     prerequisites: [HZ-HVCA-001-i01]
@@ -225,7 +274,7 @@ items:
       key: item.hz_hvca_001_i06.purpose
       fallback: >-
         An assessment that changes no plan has changed nothing.
-    authorityClass: A
+    authorityClass: C
     classification: checklist
     lifecycleState: draft
     provenance:
@@ -234,8 +283,9 @@ items:
     evidenceRule:
       key: item.hz_hvca_001_i06.evidence
       fallback: >-
-        Each priority hazard traces to a decision in the facility's emergency and
-        disaster response plan — adopted, deferred with a reason, or explicitly declined.
+        The facility's emergency and disaster response plan has been developed or revised
+        using the assessment results, including hazard-specific response plans where
+        indicated.
     capabilityBlockRef: cb-plan-integration-001
     requiredRoles: [emergency-preparedness-lead, hospital-director]
     prerequisites: [HZ-HVCA-001-i03, HZ-HVCA-001-i04]
