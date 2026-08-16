@@ -1,0 +1,58 @@
+# Production stack for checklist-api. Lives at /opt/citadel/checklist-api,
+# driven only by deploy.sh. The three Postgres instances are a SEPARATE
+# server-owned compose project (/opt/citadel) - this stack joins its network
+# and never manages the databases (D3: one database per service, and a deploy
+# of one service must not be able to take the others' databases down).
+#
+# Ports bind to HOST_BIND_IP (the Docker bridge, 172.17.0.1) - reachable by
+# Nginx Proxy Manager, NOT by the internet. Publishing on 0.0.0.0 would bypass
+# the proxy and its TLS entirely; deploy.sh refuses it.
+
+services:
+  checklist-api:
+    build: .
+    image: citadel/checklist-api:latest
+    restart: unless-stopped
+    environment:
+      DB_HOST: db-content
+      DB_NAME: checklist
+      APP_DB_USER: checklist_app
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+      PORT: "8081"
+      COMMIT_SHA: ${COMMIT_SHA:-unknown}
+    ports:
+      - "${HOST_BIND_IP:-172.17.0.1}:${HOST_APP_PORT:-8081}:8081"
+    networks: [citadel]
+
+  # The api.<domain> path router: NPM terminates TLS and forwards the whole
+  # host here; /content and /identity map to services (runbook 2.3, adapted
+  # from Caddy-at-the-edge to NPM-at-the-edge).
+  api-router:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ./api-router.Caddyfile:/etc/caddy/Caddyfile:ro
+    ports:
+      - "${HOST_BIND_IP:-172.17.0.1}:${HOST_ROUTER_PORT:-8085}:8085"
+    networks: [citadel]
+
+  # One-shot; run by deploy.sh before the app restarts. The ONLY thing that
+  # holds the privileged database credential - the app runs as checklist_app,
+  # which the migration creates (D4).
+  migrate:
+    build: .
+    image: citadel/checklist-api:latest
+    restart: "no"
+    entrypoint: ["node", "src/migrate.js"]
+    environment:
+      DB_HOST: db-content
+      DB_NAME: checklist
+      OWNER_DB_USER: postgres
+      OWNER_DB_PASSWORD: ${OWNER_DB_PASSWORD}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD}
+    networks: [citadel]
+
+networks:
+  citadel:
+    external: true
+    name: citadel_citadel

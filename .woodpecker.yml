@@ -4,12 +4,15 @@
 # RULES (trap T9): this file is pure ASCII and every command is trivial.
 # Anything with logic lives in scripts/ and is read from disk untouched.
 #
-# Events: push / pull_request / tag test the code. No deploy secrets exist
-# at these events. The deployment event (the gate) is a separate pipeline,
-# added at cutover part 2.
+# Events: push / pull_request / tag test the code. No deploy secrets exist at
+# these events. The deployment event (human-raised) runs the three-condition
+# gate: ancestor check, the FULL SUITE at the deployed SHA (every test step
+# below runs again - closing trap T32 by construction), then upload + deploy.
+# The VPS secrets are scoped to the deployment event in the Woodpecker UI, so
+# a push- or tag-triggered pipeline cannot obtain the deploy key at all.
 
 when:
-  - event: [push, pull_request, tag]
+  - event: [push, pull_request, tag, deployment]
 
 services:
   postgres:
@@ -19,6 +22,13 @@ services:
       POSTGRES_DB: citadel_test
 
 steps:
+  gate-ancestor:
+    image: node:26
+    when:
+      - event: deployment
+    commands:
+      - sh scripts/gate-ancestor.sh
+
   contracts-pin:
     image: node:26
     commands:
@@ -72,3 +82,34 @@ steps:
     image: node:26
     commands:
       - npm audit --audit-level=high
+
+  # Ships the release and runs the server-side deploy. Only on a human-raised
+  # deployment, and only after every step above passed AT THIS SHA.
+  # Transport is plain OpenSSH streaming tar - never the drone-scp plugin.
+  deploy:
+    image: alpine:3.20
+    when:
+      - event: deployment
+    environment:
+      VPS_HOST:
+        from_secret: VPS_HOST
+      VPS_USER:
+        from_secret: VPS_USER
+      VPS_SSH_KEY:
+        from_secret: VPS_SSH_KEY
+    commands:
+      - apk add --no-cache openssh-client tar
+      - |
+        if [ -z "$VPS_HOST" ] || [ -z "$VPS_USER" ] || [ -z "$VPS_SSH_KEY" ]; then
+          echo "ERROR: missing VPS deployment secret - check the names match the Woodpecker UI exactly"
+          exit 1
+        fi
+      - mkdir -p ~/.ssh
+      - printf '%s\n' "$VPS_SSH_KEY" | tr -d '\r' > ~/.ssh/id_deploy
+      - chmod 600 ~/.ssh/id_deploy
+      - ssh-keygen -y -f ~/.ssh/id_deploy >/dev/null
+      - printf '%s\n' "$CI_COMMIT_SHA" > RELEASE_SHA
+      - export TARGET=/opt/citadel/checklist-api
+      - export SSH_OPTS="-i ~/.ssh/id_deploy -p 22 -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ServerAliveInterval=20 -o ServerAliveCountMax=6 -o ConnectTimeout=20"
+      - export REMOTE="$VPS_USER@$VPS_HOST"
+      - sh scripts/ci-upload.sh
