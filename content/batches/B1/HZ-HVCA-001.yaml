@@ -61,9 +61,19 @@ provenance: &paho
     Attribution-NonCommercial-ShareAlike 3.0 IGO license." © Pan American Health
     Organization, 2024. ISBN 978-92-75-12906-7 (PDF). Verified at source, not inferred.
 
+# ⚠️ AN EMPTY EDITOR LIST MAKES THE SEPARATION RULE VACUOUS.
+#
+# `canApprove` refuses only if the approver is IN this list, or is submittedBy.
+# With both empty it returns ok for ANYONE -- including whoever wrote the
+# content. The rule that exists to guarantee an independent reviewer would have
+# guaranteed nothing, while appearing to be enforced.
+#
+# So the authoring agent is recorded here. It is not a person and does not
+# review; recording it is what gives the rule something to bite on.
 editorial:
-  editors: []
-  submittedBy: null
+  editors:
+    - agent:claude-opus-5
+  submittedBy: agent:claude-opus-5
 
 items:
 

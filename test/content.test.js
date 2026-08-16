@@ -93,3 +93,21 @@ test('the registers D11 requires all exist', () => {
   for (const r of ['source-register.md', 'reconciliation-log.md', 'permission-register.md', 'structuring-log.md'])
     assert.ok(files.includes(r), `missing register: ${r}`);
 });
+
+test('★ the editor list is NOT empty — an empty one makes canApprove vacuous', () => {
+  const editors = tool.editorial?.editors ?? [];
+  assert.ok(editors.length > 0,
+    'with no editors and no submittedBy, canApprove returns ok for ANYONE, including the author');
+  assert.ok(tool.editorial.submittedBy, 'submittedBy is unset — half the separation check is dead');
+});
+
+test('★ whoever authored this cannot approve it', async () => {
+  const { canApprove } = await import('@citadel/contracts/rules');
+  const author = tool.editorial.editors[0];
+  const inReview = { ...tool, lifecycleState: 'in-review' };
+  const self = canApprove(inReview, author);
+  assert.equal(self.ok, false);
+  assert.equal(self.refusal, 'reviewer-may-not-approve-own-version');
+  // And somebody else CAN — which is what proves the refusal above meant something.
+  assert.equal(canApprove(inReview, 'some-other-reviewer').ok, true);
+});
