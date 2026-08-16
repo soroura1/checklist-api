@@ -15,7 +15,9 @@
     "migrate": "node src/migrate.js",
     "test": "node --test test/*.test.js",
     "conformance": "node scripts/conformance-live.js",
-    "pretest": "node scripts/ci-migrate.js"
+    "pretest": "node scripts/ci-migrate.js",
+    "content:validate": "node scripts/content-validate.js",
+    "content:coverage": "node scripts/content-validate.js --write"
   },
   "dependencies": {
     "@citadel/contracts": "git+https://github.com/soroura1/contracts.git#v0.2.1",
@@ -23,5 +25,10 @@
     "@fastify/rate-limit": "^10.0.0",
     "fastify": "^5.0.0",
     "postgres": "^3.4.0"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "yaml": "^2.9.0"
   }
 }

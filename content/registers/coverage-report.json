@@ -1,0 +1,18 @@
+{
+  "generatedAt": "2026-08-16",
+  "batches": [
+    "B1"
+  ],
+  "tools": 1,
+  "items": 6,
+  "blocks": 6,
+  "blocksSharedAcrossTools": 0,
+  "orphanBlocks": [],
+  "byLifecycle": {
+    "draft": 6
+  },
+  "byAuthorityClass": {
+    "A": 6
+  },
+  "publishable": 6
+}
