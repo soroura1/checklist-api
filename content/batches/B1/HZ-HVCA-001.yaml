@@ -1,0 +1,295 @@
+# Batch B1 — HZ-HVCA-001
+#
+# Hazard, vulnerability and capacity assessment, DERIVED FROM the PAHO
+# *Resilient Hospitals* guidance, section 1.1.
+#
+# ============================================================================
+# DERIVED, NOT INHERITED
+# ============================================================================
+# The prior attempt's catalogue holds a tool with this identifier. `DEC-001`
+# governs: it is a CANDIDATE INPUT and a source of identifiers -- not an
+# inheritance. Every item below was structured from the source extract and
+# cites the page it came from. See ../../registers/reconciliation-log.md.
+#
+# LIFECYCLE STATE IS `draft`, DELIBERATELY.
+# It cannot become `approved` here: approval requires a reviewer who is not an
+# editor, and `A4` has not named one. The rules enforce that -- `canApprove`
+# checks the EDITOR LIST, not merely the recorded author.
+
+id: HZ-HVCA-001
+version: "1.0.0"
+
+title:
+  key: tool.hz_hvca_001.title
+  fallback: Hazard, vulnerability and capacity assessment
+purpose:
+  key: tool.hz_hvca_001.purpose
+  fallback: >-
+    Identify the hazards a facility credibly faces, the vulnerabilities that make it
+    susceptible to them, and the capacities it can rely on — so that preparedness is
+    decided from evidence rather than from assumption.
+
+# ============================================================================
+# CLASS C, NOT A -- AND THE RULE THAT SHOULD HAVE CAUGHT THIS DID NOT
+# ============================================================================
+# PAHO's own rights page, p.4: "If this work is adapted ... Views and opinions
+# expressed in the adaptation are the sole responsibility of the author(s) of
+# the adaptation and are NOT ENDORSED BY PAHO."
+#
+# These items ARE adaptations -- they add evidence formats, prerequisites,
+# roles and schedules PAHO does not state. Class A would attach PAHO's
+# authority to locally authored requirements.
+#
+# `adaptedAuthorityClass()` returns C for a class A parent, and migration 002
+# carries `adaptation_may_not_claim_parent_authority`. Neither fired, because
+# an earlier draft DECLARED NO PARENT -- and the constraint reads
+# "parent_tool_id is null or ...", so content that never admits it is derived
+# is exempt from the rule about derived content.
+#
+# The parent block below is what gives the constraint something to bite on.
+authorityClass: C
+classification: checklist
+dominantResponseType: structured-finding
+riskTier: general
+
+# ⚠️ RAISED BY THE D6b PRE-CHECK. An earlier draft said false, reasoning that
+# the tool "directs a facility to assess" -- and "directs a facility to assess"
+# is not a safety exemption. p.36: "Conducting a risk assessment of hospitals
+# requires coordination and engagement with SUBJECT MATTER EXPERTS in areas
+# such as engineering, architecture, safety, and disaster management."
+#
+# Erring toward more review is never the unsafe direction.
+#
+# riskTier is deliberately NOT raised here: it governs offline execution of
+# stale content, which is a safety-state judgement, and DEC-021 assigns
+# classification authority to the owner. Flagged for D7, not decided.
+specialistReviewRequired: true
+specialistReviewSignedBy: null
+
+lifecycleState: draft
+withdrawnAt: null
+
+# ★ THE ADAPTATION IS NOW DECLARED, AND THE RULE CAN FIRE.
+#
+# `parent` requires toolId + version -- it models a facility adapting ANOTHER
+# CATALOGUE TOOL. `adaptedFrom` (contracts v0.2.2, DEC-025) is the field that
+# was missing: adapted from an EXTERNAL SOURCE DOCUMENT of a known class.
+#
+# Until v0.2.2 this tool's class C was held by a comment and a unit test.
+# canClaimAuthorityClass() now refuses the class A this batch originally shipped.
+parent: null
+adaptedFrom:
+  sourceDocument: >-
+    Resilient Hospitals: an inter-regional guidance on strengthening resilience to
+    health emergencies and disasters in health facilities
+  issuingBody: Pan American Health Organization
+  sourceAuthorityClass: A
+  changeSummary: >-
+    Structured into six checkable items with locally authored evidence rules, roles
+    and prerequisites. PAHO states that adaptations are the sole responsibility of
+    the adapting author and are not endorsed by PAHO.
+
+provenance: &paho
+  sourceDocument: >-
+    Resilient Hospitals: an inter-regional guidance on strengthening resilience to
+    health emergencies and disasters in health facilities
+  sourceLocation: "§1.1 Strategic Risk Assessment and Planning, pp. 36–38"
+  issuingBody: Pan American Health Organization
+  # ⚠️ The source states a YEAR: "Washington, D.C., 2024". The day is a schema
+  # convention (the format requires a full date), NOT source data. Recorded here
+  # so it is never mistaken for a fact read off the document.
+  publicationDate: "2024-01-01"
+  reviewStatus: unreviewed
+  reproductionPermission: confirmed
+  permissionEvidence: >-
+    CC BY-NC-SA 3.0 IGO, stated on the document's own rights page: "Some rights
+    reserved. This work is available under the Creative Commons
+    Attribution-NonCommercial-ShareAlike 3.0 IGO license." © Pan American Health
+    Organization, 2024. ISBN 978-92-75-12906-7 (PDF). Verified at source, not inferred.
+
+# ⚠️ AN EMPTY EDITOR LIST MAKES THE SEPARATION RULE VACUOUS.
+#
+# `canApprove` refuses only if the approver is IN this list, or is submittedBy.
+# With both empty it returns ok for ANYONE -- including whoever wrote the
+# content. The rule that exists to guarantee an independent reviewer would have
+# guaranteed nothing, while appearing to be enforced.
+#
+# So the authoring agent is recorded here. It is not a person and does not
+# review; recording it is what gives the rule something to bite on.
+editorial:
+  editors:
+    - agent:claude-opus-5
+  submittedBy: agent:claude-opus-5
+
+items:
+
+  # --- p37 §1.1.1, bullet 1 -------------------------------------------------
+  - id: HZ-HVCA-001-i01
+    toolId: HZ-HVCA-001
+    version: "1.0.0"
+    title:
+      key: item.hz_hvca_001_i01.title
+      fallback: Identify the hazards this facility faces
+    purpose:
+      key: item.hz_hvca_001_i01.purpose
+      fallback: >-
+        Establish which hazards are credible here, before deciding what to prepare for.
+    authorityClass: C
+    classification: checklist
+    lifecycleState: draft
+    provenance:
+      <<: *paho
+      sourceLocation: "p. 37, §1.1.1 — first bullet"
+    evidenceRule:
+      key: item.hz_hvca_001_i01.evidence
+      fallback: >-
+        The assessment identifies relevant natural, biological, technological and
+        societal hazards; assesses the likelihood of each affecting the hospital, the
+        surrounding community, or both; and identifies which risks are prioritised for
+        management. No particular list or marking format is required.
+    capabilityBlockRef: cb-hazard-identification-001
+    requiredRoles: [emergency-preparedness-lead]
+    prerequisites: []
+    reviewDate: "2027-08-16"
+
+  # --- p37 §1.1.1, bullet 2 -------------------------------------------------
+  - id: HZ-HVCA-001-i02
+    toolId: HZ-HVCA-001
+    version: "1.0.0"
+    title:
+      key: item.hz_hvca_001_i02.title
+      fallback: Identify the vulnerabilities that make those hazards matter
+    purpose:
+      key: item.hz_hvca_001_i02.purpose
+      fallback: >-
+        A hazard becomes a risk through a weakness. Name the weaknesses.
+    authorityClass: C
+    classification: checklist
+    lifecycleState: draft
+    provenance:
+      <<: *paho
+      sourceLocation: "p. 37, §1.1.1 — second bullet"
+    evidenceRule:
+      key: item.hz_hvca_001_i02.evidence
+      fallback: >-
+        Vulnerabilities recorded across all three asset classes the source names —
+        structural, nonstructural, and emergency management systems.
+    capabilityBlockRef: cb-vulnerability-identification-001
+    requiredRoles: [emergency-preparedness-lead, facilities-engineer]
+    prerequisites: [HZ-HVCA-001-i01]
+    reviewDate: "2027-08-16"
+
+  # --- p37 §1.1.1, bullet 3 -------------------------------------------------
+  - id: HZ-HVCA-001-i03
+    toolId: HZ-HVCA-001
+    version: "1.0.0"
+    title:
+      key: item.hz_hvca_001_i03.title
+      fallback: Analyse what the consequences would actually be
+    purpose:
+      key: item.hz_hvca_001_i03.purpose
+      fallback: >-
+        Assess potential consequences alongside likelihood, vulnerability and coping
+        capacity, so that risks can be prioritised on more than one dimension.
+    authorityClass: C
+    classification: checklist
+    lifecycleState: draft
+    provenance:
+      <<: *paho
+      sourceLocation: "p. 37, §1.1.1 — third bullet"
+    evidenceRule:
+      key: item.hz_hvca_001_i03.evidence
+      fallback: >-
+        For each priority hazard, consequences recorded for people, property, services,
+        livelihoods and environment — in the hospital AND in the community.
+    capabilityBlockRef: cb-consequence-analysis-001
+    requiredRoles: [emergency-preparedness-lead]
+    prerequisites: [HZ-HVCA-001-i01, HZ-HVCA-001-i02]
+    reviewDate: "2027-08-16"
+
+  # --- p37 §1.1.1, bullet 4 -------------------------------------------------
+  - id: HZ-HVCA-001-i04
+    toolId: HZ-HVCA-001
+    version: "1.0.0"
+    title:
+      key: item.hz_hvca_001_i04.title
+      fallback: Identify the capacities the facility can actually rely on
+    purpose:
+      key: item.hz_hvca_001_i04.purpose
+      fallback: >-
+        Capacity assumed is not capacity available. Record what is real.
+    authorityClass: C
+    classification: checklist
+    lifecycleState: draft
+    provenance:
+      <<: *paho
+      sourceLocation: "p. 37, §1.1.1 — fourth bullet"
+    evidenceRule:
+      key: item.hz_hvca_001_i04.evidence
+      fallback: >-
+        Capacities recorded for maintaining routine AND emergency operations, for
+        leadership and management, and for coordination with local authorities —
+        including capacity to support vulnerable groups.
+    capabilityBlockRef: cb-capacity-identification-001
+    requiredRoles: [emergency-preparedness-lead, hospital-director]
+    prerequisites: [HZ-HVCA-001-i01]
+    reviewDate: "2027-08-16"
+
+  # --- p36 §1.1 -------------------------------------------------------------
+  - id: HZ-HVCA-001-i05
+    toolId: HZ-HVCA-001
+    version: "1.0.0"
+    title:
+      key: item.hz_hvca_001_i05.title
+      fallback: Reassess as the risk picture changes
+    purpose:
+      key: item.hz_hvca_001_i05.purpose
+      fallback: >-
+        The source is explicit that hazards, vulnerabilities and capacities are dynamic.
+        An assessment done once is a document, not a practice.
+    authorityClass: C
+    classification: checklist
+    lifecycleState: draft
+    provenance:
+      <<: *paho
+      sourceLocation: "p. 36, §1.1 — 'as risks change over time, hospitals must continuously monitor'"
+    evidenceRule:
+      key: item.hz_hvca_001_i05.evidence
+      fallback: >-
+        The hospital can demonstrate ongoing monitoring of changes in hazards,
+        vulnerabilities and capacities, and has a locally determined schedule or defined
+        change triggers for repeating and documenting the assessment. The process is
+        documented sufficiently to be repeated. No universal fixed interval is imposed —
+        but a schedule that is not regular does not satisfy "continuously monitor".
+    capabilityBlockRef: cb-assessment-review-cycle-001
+    requiredRoles: [emergency-preparedness-lead]
+    prerequisites: [HZ-HVCA-001-i01]
+    reviewDate: "2027-08-16"
+
+  # --- p38, Figure 4 (STAR-H cycle, step 05) --------------------------------
+  - id: HZ-HVCA-001-i06
+    toolId: HZ-HVCA-001
+    version: "1.0.0"
+    title:
+      key: item.hz_hvca_001_i06.title
+      fallback: Carry the findings into the response plan
+    purpose:
+      key: item.hz_hvca_001_i06.purpose
+      fallback: >-
+        An assessment that changes no plan has changed nothing.
+    authorityClass: C
+    classification: checklist
+    lifecycleState: draft
+    provenance:
+      <<: *paho
+      sourceLocation: "p. 38, Figure 4 — STAR-H cycle, step 05 'Incorporate results into EDRP-H'"
+    evidenceRule:
+      key: item.hz_hvca_001_i06.evidence
+      fallback: >-
+        The facility's emergency and disaster response plan has been developed or revised
+        using the assessment results, including hazard-specific response plans where
+        indicated.
+    capabilityBlockRef: cb-plan-integration-001
+    requiredRoles: [emergency-preparedness-lead, hospital-director]
+    prerequisites: [HZ-HVCA-001-i03, HZ-HVCA-001-i04]
+    reviewDate: "2027-08-16"

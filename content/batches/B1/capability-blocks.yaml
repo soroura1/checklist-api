@@ -1,0 +1,88 @@
+# Capability blocks referenced by batch B1.
+#
+# ============================================================================
+# WHY THESE EXIST SEPARATELY FROM THE ITEMS THAT REFERENCE THEM
+# ============================================================================
+# A block is the unit of CREDIT. Two items in two different tools referencing
+# ONE block describe one piece of work, so a facility that does that work is
+# credited once -- not twice, and not zero times depending on which checklist
+# they happened to open.
+#
+# The ingestion plan calls the block reference "the highest-value and most-
+# skipped step". Skipping it produces a library of parallel checklists that
+# each earn separately.
+#
+# ⚠️ B1 ALONE CANNOT DEMONSTRATE SHARING. One tool means one referencing item
+# per block, which looks like pointless indirection. It is not: the blocks are
+# written at the granularity a SECOND tool will reuse, and
+# cb-assessment-review-cycle-001 and cb-plan-integration-001 are deliberately
+# generic because almost every assessment instrument ends with those two steps.
+# Batch B2 is where this earns its keep, and where it must be checked.
+
+blocks:
+  - id: cb-hazard-identification-001
+    version: "1.0.0"
+    title:
+      key: block.hazard_identification.title
+      fallback: Hazard identification
+    description:
+      key: block.hazard_identification.description
+      fallback: >-
+        The facility maintains a current, written list of the hazards it credibly faces,
+        distinguishing those affecting the facility from those affecting the community.
+
+  - id: cb-vulnerability-identification-001
+    version: "1.0.0"
+    title:
+      key: block.vulnerability_identification.title
+      fallback: Vulnerability identification
+    description:
+      key: block.vulnerability_identification.description
+      fallback: >-
+        The facility has identified the weaknesses — structural, nonstructural and in its
+        emergency management systems — that make it susceptible to its hazards.
+
+  - id: cb-consequence-analysis-001
+    version: "1.0.0"
+    title:
+      key: block.consequence_analysis.title
+      fallback: Consequence analysis
+    description:
+      key: block.consequence_analysis.description
+      fallback: >-
+        For each priority hazard, the facility has analysed the potential consequences to
+        people, property, services, livelihoods and environment.
+
+  - id: cb-capacity-identification-001
+    version: "1.0.0"
+    title:
+      key: block.capacity_identification.title
+      fallback: Capacity identification
+    description:
+      key: block.capacity_identification.description
+      fallback: >-
+        The facility has recorded the capacities it can rely on to maintain routine and
+        emergency operations, including leadership, management and external coordination.
+
+  # Deliberately generic — B2 will reference these two.
+  - id: cb-assessment-review-cycle-001
+    version: "1.0.0"
+    title:
+      key: block.assessment_review_cycle.title
+      fallback: Assessment review cycle
+    description:
+      key: block.assessment_review_cycle.description
+      fallback: >-
+        An assessment has a named owner and a scheduled review, so that it remains a
+        practice rather than becoming a document.
+
+  - id: cb-plan-integration-001
+    version: "1.0.0"
+    title:
+      key: block.plan_integration.title
+      fallback: Findings integrated into planning
+    description:
+      key: block.plan_integration.description
+      fallback: >-
+        Assessment findings trace to decisions in the facility's response plan — adopted,
+        deferred with a reason, or explicitly declined.
