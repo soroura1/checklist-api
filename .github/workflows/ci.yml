@@ -56,6 +56,15 @@ jobs:
       - name: contracts pin is an exact tag, never a branch
         run: ./check-repo.sh
 
+      # The contracts dependency is a PRIVATE git repo, and the runner's GITHUB_TOKEN is
+      # scoped to the repo the workflow runs in — it cannot clone a sibling. CONTRACTS_READ_TOKEN
+      # is an org-level secret: a fine-grained PAT with read-only Contents on contracts alone.
+      # npm normalises the github https pin to ssh in the lockfile, so both forms are rewritten.
+      - name: authenticate npm's git to the private contracts repo
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.CONTRACTS_READ_TOKEN }}@github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://x-access-token:${{ secrets.CONTRACTS_READ_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - run: npm ci
 
       - name: lint and format
