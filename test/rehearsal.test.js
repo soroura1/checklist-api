@@ -15,21 +15,45 @@ const BEFORE = ['001_catalogue.sql'];                          // exactly R0
 const AFTER  = ['001_catalogue.sql', '002_governance.sql'];    // exactly R1
 
 const HAVE_DB = !!process.env.TEST_DB_HOST;
-let postgres, sql;
+
+// ⚠️ A DEDICATED database, never TEST_DB_NAME.
+//
+// A rehearsal run against a database that ALREADY has the after-state tests
+// nothing — every assertion passes because the migrations were applied long ago.
+// The whole point is to construct the BEFORE state deliberately.
+const REHEARSAL_DB = process.env.REHEARSAL_DB_NAME ?? 'rehearsal';
+
+let postgres, sql, admin;
 
 before(async () => {
   if (!HAVE_DB) return;
   ({ default: postgres } = await import('postgres'));
-  sql = postgres({
+  const base = {
     host: process.env.TEST_DB_HOST,
     port: Number(process.env.TEST_DB_PORT ?? 5432),
-    database: process.env.TEST_DB_NAME ?? 'rehearsal',
     username: process.env.TEST_OWNER_USER ?? 'postgres',
     password: process.env.TEST_OWNER_PASSWORD ?? 'test',
     onnotice: () => {},
-  });
+  };
+
+  // Drop and recreate, so a rehearsal always starts from nothing.
+  admin = postgres({ ...base, database: 'postgres', max: 1 });
+  await admin`drop database if exists ${admin(REHEARSAL_DB)}`;
+  await admin`create database ${admin(REHEARSAL_DB)}`;
+
+  // max: 1 — the migration files contain their own `begin;`/`commit;`, and the
+  // driver refuses a transaction spanning a pooled connection. Migrations are
+  // single-connection work anyway.
+  sql = postgres({ ...base, database: REHEARSAL_DB, max: 1 });
 });
-after(async () => { await sql?.end(); });
+
+after(async () => {
+  await sql?.end();
+  if (admin) {
+    await admin`drop database if exists ${admin(REHEARSAL_DB)}`;
+    await admin.end();
+  }
+});
 
 describe('migration rehearsal', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — needs a real Postgres' }, () => {
   test('the BEFORE list is exactly the previous release — bounding one list only looks scoped', () => {
@@ -40,8 +64,8 @@ describe('migration rehearsal', { skip: HAVE_DB ? false : 'no TEST_DB_HOST — n
     // 1. Build the before-state and populate it.
     for (const f of BEFORE) await sql.unsafe(readFileSync(join(dir, f), 'utf8'));
     const facility = '11111111-1111-1111-1111-111111111111';
-    await sql`insert into tenancy_probe (facility_id, seat_id, tool_id, tool_version)
-              values (${facility}, gen_random_uuid(), 'HZ-HVCA-001', '1.0.0')`;
+    await sql`insert into tenancy_probe (facility_id, note)
+              values (${facility}, 'pre-existing row — must not move')`;
     const rowsBefore = await sql`select * from tenancy_probe order by id`;
     const policiesBefore = await sql`
       select schemaname, tablename, policyname, qual, with_check
