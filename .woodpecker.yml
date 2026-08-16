@@ -1,0 +1,74 @@
+# Shared CI pipeline (Woodpecker) - written once, copied to the five repositories.
+# DEC-016: Woodpecker is the runner, GitHub stays the forge.
+#
+# RULES (trap T9): this file is pure ASCII and every command is trivial.
+# Anything with logic lives in scripts/ and is read from disk untouched.
+#
+# Events: push / pull_request / tag test the code. No deploy secrets exist
+# at these events. The deployment event (the gate) is a separate pipeline,
+# added at cutover part 2.
+
+when:
+  - event: [push, pull_request, tag]
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: citadel_test
+
+steps:
+  contracts-pin:
+    image: node:26
+    commands:
+      - ./check-repo.sh
+
+  install:
+    image: node:26
+    commands:
+      - git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+      - npm ci
+
+  lint:
+    image: node:26
+    commands:
+      - npm run lint --if-present
+
+  typecheck:
+    image: node:26
+    commands:
+      - npm run typecheck --if-present
+
+  test:
+    image: node:26
+    environment:
+      TEST_DB_HOST: postgres
+      TEST_DB_PORT: "5432"
+      TEST_DB_NAME: citadel_test
+      TEST_OWNER_USER: postgres
+      TEST_OWNER_PASSWORD: test
+    commands:
+      - node scripts/wait-for-db.js
+      - npm test
+
+  build:
+    image: node:26
+    commands:
+      - npm run build --if-present
+
+  conformance:
+    image: node:26
+    environment:
+      TEST_DB_HOST: postgres
+      TEST_DB_PORT: "5432"
+      TEST_DB_NAME: citadel_test
+      TEST_OWNER_USER: postgres
+      TEST_OWNER_PASSWORD: test
+    commands:
+      - npm run conformance --if-present
+
+  audit:
+    image: node:26
+    commands:
+      - npm audit --audit-level=high
