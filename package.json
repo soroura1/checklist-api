@@ -17,9 +17,9 @@
     "conformance": "node ../contracts/conformance/src/run.js"
   },
   "dependencies": {
-    "@citadel/contracts": "file:../contracts",
-    "fastify": "^5.0.0",
+    "@citadel/contracts": "git+https://github.com/soroura1/contracts.git#v0.2.0",
     "@fastify/rate-limit": "^10.0.0",
+    "fastify": "^5.0.0",
     "postgres": "^3.4.0"
   }
 }
