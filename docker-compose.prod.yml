@@ -33,7 +33,7 @@ services:
     volumes:
       - ./api-router.Caddyfile:/etc/caddy/Caddyfile:ro
     ports:
-      - "${HOST_BIND_IP:-172.17.0.1}:${HOST_ROUTER_PORT:-8085}:8085"
+      - "${HOST_BIND_IP:-172.17.0.1}:${HOST_ROUTER_PORT:-8086}:8085"
     networks: [citadel]
 
   # One-shot; run by deploy.sh before the app restarts. The ONLY thing that

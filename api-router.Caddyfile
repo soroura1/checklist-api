@@ -1,4 +1,6 @@
-# Path router for api.<domain>. NPM forwards the whole host to :8085; the
+# Path router for api.<domain>. NPM forwards the whole host to the published
+# host port (HOST_ROUTER_PORT, 8086 on this VPS - 8085 was already taken by
+# another platform's adminer); inside the container it listens on 8085. The
 # prefixes map to services. The strip_prefix is load-bearing: the service
 # defines routes like /catalogue/..., and the public form is /content/catalogue/...
 #
