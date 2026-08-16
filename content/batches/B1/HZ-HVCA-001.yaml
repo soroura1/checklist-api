@@ -69,22 +69,25 @@ specialistReviewSignedBy: null
 lifecycleState: draft
 withdrawnAt: null
 
-# ⚠️ THE ADAPTATION RULE CANNOT BE DECLARED HERE. SCHEMA GAP, RECORDED.
+# ★ THE ADAPTATION IS NOW DECLARED, AND THE RULE CAN FIRE.
 #
 # `parent` requires toolId + version -- it models a facility adapting ANOTHER
-# CATALOGUE TOOL, which is an R2 feature. There is no field for the case that
-# actually applies to every ingested batch: adapted from an EXTERNAL SOURCE
-# DOCUMENT of a known authority class.
+# CATALOGUE TOOL. `adaptedFrom` (contracts v0.2.2, DEC-025) is the field that
+# was missing: adapted from an EXTERNAL SOURCE DOCUMENT of a known class.
 #
-# So `adaptation_may_not_claim_parent_authority` is not merely unfired here --
-# it is UNFIREABLE for ingested content, because the fact it keys on has
-# nowhere to live. The class C below is therefore held by this comment and by
-# test/content.test.js, which is weaker than a constraint and is why the gap is
-# recorded rather than worked around.
-#
-# Owed in `contracts`: an `adaptedFrom` block carrying sourceDocument,
-# issuingBody and sourceAuthorityClass, and the rule extended to read it.
+# Until v0.2.2 this tool's class C was held by a comment and a unit test.
+# canClaimAuthorityClass() now refuses the class A this batch originally shipped.
 parent: null
+adaptedFrom:
+  sourceDocument: >-
+    Resilient Hospitals: an inter-regional guidance on strengthening resilience to
+    health emergencies and disasters in health facilities
+  issuingBody: Pan American Health Organization
+  sourceAuthorityClass: A
+  changeSummary: >-
+    Structured into six checkable items with locally authored evidence rules, roles
+    and prerequisites. PAHO states that adaptations are the sole responsibility of
+    the adapting author and are not endorsed by PAHO.
 
 provenance: &paho
   sourceDocument: >-

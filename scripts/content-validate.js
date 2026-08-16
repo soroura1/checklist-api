@@ -31,6 +31,7 @@ const parse = (t) => parseYaml(t, { merge: true });
 // rejects them with an unhelpful "no schema with key or ref" error.
 import Ajv from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
+import { canClaimAuthorityClass } from '@citadel/contracts/rules';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const contentDir = join(here, '../content');
@@ -93,6 +94,25 @@ for (const batch of batches) {
 }
 
 // --- Cross-file rules the schemas cannot express -----------------------------
+
+// ★ The adaptation rule, now fireable (contracts v0.2.2, DEC-025). Content
+// adapted from class A or B guidance is class C. Before `adaptedFrom` existed
+// there was nowhere to declare the source, so this could not be checked at all
+// -- and B1 shipped class A on adaptations of material whose own rights page
+// says adaptations are not endorsed by the issuer.
+for (const tool of allTools) {
+  const claim = canClaimAuthorityClass(tool);
+  if (!claim.ok)
+    problems.push(
+      `tool ${tool.id} claims authorityClass ${tool.authorityClass} but is adapted from ` +
+      `class ${tool.adaptedFrom?.sourceAuthorityClass ?? tool.parent?.authorityClass} — ` +
+      `${claim.refusal}; required ${claim.requiredClass}`,
+    );
+  // Items inherit the tool's ceiling; an item may not out-claim its own tool.
+  for (const item of tool.items ?? [])
+    if (!canClaimAuthorityClass({ ...tool, authorityClass: item.authorityClass }).ok)
+      problems.push(`item ${item.id} claims authorityClass ${item.authorityClass} on adapted content`);
+}
 
 for (const item of allItems) {
   // ★ THE MOST-SKIPPED STEP, ASSERTED. An item referencing a block that does not

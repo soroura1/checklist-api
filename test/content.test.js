@@ -53,14 +53,22 @@ test('permission is confirmed, with evidence, on every item', () => {
   }
 });
 
-test('★ authorityClass is C — these are ADAPTATIONS, and PAHO says so itself', () => {
+test('★ authorityClass is C — these are ADAPTATIONS, and PAHO says so itself', async () => {
   // PAHO rights page: "If this work is adapted ... not endorsed by PAHO."
-  // adaptedAuthorityClass() returns C for a class A parent. The DB constraint
-  // that enforces it cannot fire on ingested content -- `parent` requires a
-  // toolId, and there is no field for an external source document. So this
-  // test is currently the only thing holding the rule. See the YAML comment.
   assert.equal(tool.authorityClass, 'C');
   for (const i of tool.items) assert.equal(i.authorityClass, 'C');
+
+  // ★ And it is no longer held by this test alone. contracts v0.2.2 added
+  // `adaptedFrom`, so the source is DECLARED and the rule can fire.
+  const { canClaimAuthorityClass } = await import('@citadel/contracts/rules');
+  assert.equal(tool.adaptedFrom.sourceAuthorityClass, 'A');
+  assert.equal(canClaimAuthorityClass(tool).ok, true);
+
+  // The refusal is real: re-claiming class A is rejected by name.
+  const relabelled = canClaimAuthorityClass({ ...tool, authorityClass: 'A' });
+  assert.equal(relabelled.ok, false);
+  assert.equal(relabelled.refusal, 'adaptation-may-not-claim-source-authority');
+  assert.equal(relabelled.requiredClass, 'C');
 });
 
 test('★ specialist review is required — "directs a facility to assess" is not a safety exemption', () => {
