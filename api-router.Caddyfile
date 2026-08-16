@@ -1,0 +1,19 @@
+# Path router for api.<domain>. NPM forwards the whole host to :8085; the
+# prefixes map to services. The strip_prefix is load-bearing: the service
+# defines routes like /catalogue/..., and the public form is /content/catalogue/...
+#
+# 401-never-404 (H3): unknown paths 404 HERE at the router; known service
+# routes answer 401 themselves - which is what makes a 401 prove deployment.
+:8085 {
+	handle /content/* {
+		uri strip_prefix /content
+		reverse_proxy checklist-api:8081
+	}
+	handle /identity/* {
+		# identity-enrolment begins in R2 (Q7-Q9)
+		respond "not found" 404
+	}
+	handle {
+		respond "not found" 404
+	}
+}

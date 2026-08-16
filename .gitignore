@@ -18,3 +18,4 @@ coverage/
 *.log
 tmp/
 .cache/
+RELEASE_SHA
