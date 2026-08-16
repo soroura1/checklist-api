@@ -14,10 +14,11 @@
     "check": "./check-repo.sh",
     "migrate": "node src/migrate.js",
     "test": "node --test test/*.test.js",
-    "conformance": "node ../contracts/conformance/src/run.js"
+    "conformance": "node scripts/conformance-live.js",
+    "pretest": "node scripts/ci-migrate.js"
   },
   "dependencies": {
-    "@citadel/contracts": "git+https://github.com/soroura1/contracts.git#v0.2.0",
+    "@citadel/contracts": "git+https://github.com/soroura1/contracts.git#v0.2.1",
     "@fastify/rate-limit": "^10.0.0",
     "fastify": "^5.0.0",
     "postgres": "^3.4.0"
