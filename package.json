@@ -17,7 +17,8 @@
     "conformance": "node scripts/conformance-live.js",
     "pretest": "node scripts/ci-migrate.js",
     "content:validate": "node scripts/content-validate.js",
-    "content:coverage": "node scripts/content-validate.js --write"
+    "content:coverage": "node scripts/content-validate.js --write",
+    "ephemeral": "sh scripts/ephemeral-check.sh"
   },
   "dependencies": {
     "@citadel/contracts": "git+https://github.com/soroura1/contracts.git#v0.2.2",
