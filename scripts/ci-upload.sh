@@ -49,6 +49,52 @@ if [ "${DRY_RUN:-0}" = "1" ]; then
   exit 0
 fi
 
+# ---------------------------------------------------------------------------
+# ★ PROVE THE HOST IS REACHABLE BEFORE ANY CHECK CAN BLAME THE SERVER.
+#
+# Every check below this line runs over ssh, so a transport failure makes the
+# FIRST of them fail - and report its own confident, wrong reason.
+#
+# On 20 Aug a citadel deployment printed "No /opt/citadel/citadel/.env on the
+# VPS - see the bootstrap checklist" while that file was present, complete and
+# owned by deploy. The .env was never the problem: ssh had closed and `test -f`
+# never ran. The message sent the operator to the wrong checklist entirely.
+#
+# ⚠️ THE TRAP THAT CAUSED IT. The Woodpecker agent runs ON the VPS, so a deploy
+# step is a container on that same host - and a container cannot reliably reach
+# its own host's PUBLIC address. The connection is accepted and then dropped
+# ("Connection closed by <host> port 22"). The identical container reaches the
+# identical sshd without incident over the docker bridge gateway. So while the
+# runner lives on the box, VPS_HOST must be 172.17.0.1, NOT the public IP.
+#
+# A check is only worth its message. One that cannot tell "the server said no"
+# from "the server was never asked" is worse than no check.
+# ---------------------------------------------------------------------------
+echo "-> Checking the VPS is reachable over SSH..."
+if ! ssh $SSH_OPTS "$REMOTE" true; then
+  echo
+  echo "REFUSED: could not open an SSH session to the deploy host."
+  echo
+  echo "Nothing has been changed on the server. The running release is untouched."
+  echo
+  echo "Read the ssh error above - the two signatures mean different things:"
+  echo
+  echo "  'Connection closed by ... port 22'"
+  echo "      Reached the host, which then dropped it. If the Woodpecker agent"
+  echo "      runs on the VPS itself, a deploy container cannot reach the host's"
+  echo "      own public address. Set the VPS_HOST secret to 172.17.0.1."
+  echo
+  echo "  'Permission denied (publickey)'"
+  echo "      Reached sshd and was refused. The VPS_SSH_KEY secret does not match"
+  echo "      any key in the deploy user's authorized_keys."
+  echo
+  echo "  'Connection timed out' / 'No route to host'"
+  echo "      Never reached the host. Check VPS_HOST, and that it is not a"
+  echo "      Cloudflare-proxied name - those do not carry port 22."
+  exit 1
+fi
+echo "   reachable"
+
 # Precondition: the server-owned env file must already exist. CI never ships
 # secrets, so its absence means the VPS was never bootstrapped - better to stop
 # here than to upload a release the deploy will refuse to run.
